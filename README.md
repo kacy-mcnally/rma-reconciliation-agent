@@ -6,7 +6,7 @@ An AI agent that investigates service-parts returns (RMA) and inventory discrepa
 
 - [x] Step 1: Synthetic operations dataset with planted failures
 - [x] Step 2: MCP server and investigation agent
-- [ ] Step 3: Dashboard
+- [x] Step 3: Dashboard
 - [ ] Step 4: Vision intake, demo script
 
 ## The dataset
@@ -31,6 +31,7 @@ pip install -r requirements.txt
 python data/generate.py        # build the dataset
 python -m rma_agent.scan       # deterministic scan, no API key needed
 python evaluate.py             # score findings against the answer key
+python -m dashboard.build      # exception dashboard -> dashboard/index.html
 python -m rma_agent.agent      # Claude investigates (needs ANTHROPIC_API_KEY)
 python -m rma_agent.agent "Why are customers at Memphis being billed for parts they returned?"
 ```
@@ -44,6 +45,7 @@ python -m rma_agent.agent "Why are customers at Memphis being billed for parts t
 | `rma_agent/agent.py` | A Claude agent that connects to the MCP server, investigates, and writes an exception report with corrective-action notes for each 3PL |
 | `rma_agent/scan.py` | Runs every detector without an LLM: the baseline and the input to scoring |
 | `evaluate.py` | Scores findings against the planted answer key |
+| `dashboard/build.py` | Builds a self-contained exception dashboard: exposure by issue, when each problem started, hub reconciliation, and corrective actions |
 
 ## Results
 

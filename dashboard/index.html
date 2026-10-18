@@ -1,0 +1,347 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Returns Exception Dashboard</title>
+<style>
+:root {
+  color-scheme: light;
+  --page: #f9f9f7;
+  --surface-1: #fcfcfb;
+  --text-primary: #0b0b0b;
+  --text-secondary: #52514e;
+  --text-muted: #898781;
+  --grid: #e1e0d9;
+  --axis: #c3c2b7;
+  --border: rgba(11, 11, 11, 0.10);
+  --series-1: #2a78d6;
+  --series-1-hover: #256abf;
+  --track: #f0efec;
+  --good: #0ca30c;
+  --good-text: #006300;
+  --critical: #d03b3b;
+}
+@media (prefers-color-scheme: dark) {
+  :root:where(:not([data-theme="light"])) {
+    color-scheme: dark;
+    --page: #0d0d0d;
+    --surface-1: #1a1a19;
+    --text-primary: #f0efec;
+    --text-secondary: #c3c2b7;
+    --text-muted: #898781;
+    --grid: #2c2c2a;
+    --axis: #383835;
+    --border: rgba(255, 255, 255, 0.10);
+    --series-1: #3987e5;
+    --series-1-hover: #5598e7;
+    --track: #262624;
+    --good-text: #0ca30c;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --page: #0d0d0d;
+  --surface-1: #1a1a19;
+  --text-primary: #f0efec;
+  --text-secondary: #c3c2b7;
+  --text-muted: #898781;
+  --grid: #2c2c2a;
+  --axis: #383835;
+  --border: rgba(255, 255, 255, 0.10);
+  --series-1: #3987e5;
+  --series-1-hover: #5598e7;
+  --track: #262624;
+  --good-text: #0ca30c;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--page);
+  color: var(--text-primary);
+  font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+main { max-width: 1120px; margin: 0 auto; padding: 32px 16px 48px; }
+h1 { font-size: 26px; line-height: 1.2; margin: 0 0 4px; font-weight: 650; }
+h2 { font-size: 17px; margin: 0 0 4px; font-weight: 600; }
+.sub { color: var(--text-secondary); margin: 0; }
+.muted { color: var(--text-muted); font-size: 13px; }
+.card {
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+  margin-top: 16px;
+}
+.hero { display: flex; flex-wrap: wrap; gap: 24px 40px; align-items: flex-end; }
+.hero-value { font-size: 56px; font-weight: 650; line-height: 1; letter-spacing: -0.02em; }
+.hero-label { color: var(--text-secondary); margin-top: 8px; }
+.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; flex: 1; min-width: 260px; }
+.kpi-label { color: var(--text-secondary); font-size: 13px; }
+.kpi-value { font-size: 24px; font-weight: 600; }
+.kpi-note { color: var(--text-muted); font-size: 13px; }
+
+/* Exposure bars */
+.bars { margin-top: 16px; display: grid; gap: 14px; }
+.bar-label { font-size: 14px; color: var(--text-primary); }
+.bar-label .site { color: var(--text-secondary); font-weight: 600; margin-right: 6px; }
+.bar-row { display: flex; align-items: center; gap: 8px; margin-top: 4px; }
+.bar {
+  height: 20px; min-width: 3px;
+  background: var(--series-1);
+  border-radius: 0 4px 4px 0;
+  cursor: default; outline-offset: 2px;
+}
+.bar:hover, .bar:focus-visible { background: var(--series-1-hover); }
+.bar-value { font-size: 14px; color: var(--text-primary); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.baseline { border-left: 1px solid var(--axis); padding-left: 0; }
+
+/* Small multiples */
+.multiples { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px 24px; margin-top: 16px; }
+.panel-title { font-size: 14px; margin: 0 0 6px; }
+.panel-title .site { color: var(--text-secondary); font-weight: 600; margin-right: 6px; }
+.panel svg { width: 100%; height: auto; display: block; overflow: visible; }
+.panel svg text { fill: var(--text-muted); font-size: 11px; font-family: inherit; }
+.panel svg .peak { fill: var(--text-secondary); }
+.col { fill: var(--series-1); }
+.col:hover, .col:focus-visible { fill: var(--series-1-hover); outline: none; }
+.hit { fill: transparent; }
+
+/* Tables */
+.table-wrap { overflow-x: auto; margin-top: 12px; }
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+th { text-align: left; font-weight: 600; color: var(--text-secondary); font-size: 13px; padding: 8px 10px; border-bottom: 1px solid var(--axis); white-space: nowrap; }
+td { padding: 10px; border-bottom: 1px solid var(--grid); vertical-align: top; }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.status { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; font-weight: 500; }
+.status svg { flex: none; }
+.status.good { color: var(--good-text); }
+.status.critical { color: var(--critical); }
+.action { color: var(--text-secondary); min-width: 260px; }
+.nowrap { white-space: nowrap; }
+
+.tooltip {
+  position: fixed; z-index: 10; pointer-events: none;
+  background: var(--surface-1); color: var(--text-primary);
+  border: 1px solid var(--border); border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  padding: 8px 10px; font-size: 13px; max-width: 260px;
+  opacity: 0; transition: opacity 80ms;
+}
+.tooltip.show { opacity: 1; }
+.tooltip strong { display: block; font-size: 15px; }
+.tooltip span { color: var(--text-secondary); }
+footer { margin-top: 24px; color: var(--text-muted); font-size: 13px; }
+@media (max-width: 560px) {
+  .hero-value { font-size: 48px; }
+  .card { padding: 16px; }
+}
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Returns Network Exception Dashboard</h1>
+    <p class="sub" id="subtitle"></p>
+  </header>
+
+  <section class="card hero" aria-label="Headline">
+    <div>
+      <div class="hero-value" id="hero"></div>
+      <div class="hero-label" id="hero-label"></div>
+    </div>
+    <div class="kpis" id="kpis"></div>
+  </section>
+
+  <section class="card" aria-labelledby="exposure-h">
+    <h2 id="exposure-h">Exposure by issue</h2>
+    <p class="muted">Dollar value of affected units, 3PL and process failures only</p>
+    <div class="bars" id="bars"></div>
+  </section>
+
+  <section class="card" aria-labelledby="timing-h">
+    <h2 id="timing-h">When each problem started</h2>
+    <p class="muted">Affected units per month; each panel on its own scale</p>
+    <div class="multiples" id="multiples"></div>
+  </section>
+
+  <section class="card" aria-labelledby="hubs-h">
+    <h2 id="hubs-h">Hub reconciliation: ERP vs 3PL physical on-hand</h2>
+    <p class="muted">Defective returns stock at each 3PL hub; variance = ERP minus 3PL</p>
+    <div class="table-wrap"><table id="hubs"></table></div>
+  </section>
+
+  <section class="card" aria-labelledby="actions-h">
+    <h2 id="actions-h">Findings and corrective actions</h2>
+    <p class="muted">Ordered by exposure; customer non-returns are billable, not a 3PL failure</p>
+    <div class="table-wrap"><table id="actions"></table></div>
+  </section>
+
+  <footer>
+    All companies, sites, parts, and customers are fictional. Generated by
+    <code>python -m dashboard.build</code> from the same tools the investigation agent uses.
+  </footer>
+</main>
+<div class="tooltip" id="tooltip" role="status" aria-live="polite"></div>
+
+<script>
+const DATA = {"totals": {"as_of": "2026-09-30", "exposure": 1298750.35, "issues": 6, "rmas": 16159, "transactions": 74578, "wrongly_billed": 273, "wrongly_billed_value": 599478.64, "non_returns": 566, "non_return_value": 1243413.24}, "months": ["2025-01", "2025-02", "2025-03", "2025-04", "2025-05", "2025-06", "2025-07", "2025-08", "2025-09", "2025-10", "2025-11", "2025-12", "2026-01", "2026-02", "2026-03", "2026-04", "2026-05", "2026-06", "2026-07", "2026-08", "2026-09"], "findings": [{"site": "ALL", "issue": "Customer never returned the part", "key": "customer_non_return", "units": 566, "value": 1243413.24, "since": "", "owner": "Customer billing", "action": "Bill customers whose parts never arrived; exclude any RMA with a 3PL receipt.", "monthly": [1, 27, 37, 28, 20, 22, 36, 37, 33, 28, 25, 42, 32, 34, 31, 24, 32, 29, 26, 22, 0]}, {"site": "MEM", "issue": "Wrong part number keyed at receiving", "key": "wrong_part_number", "units": 197, "value": 443934.21, "since": "2026-03-05", "owner": "Riverline Logistics", "action": "Require part-number scan-to-match against the RMA at receipt; correct the mis-keyed receipts and reverse the customer billing flags.", "monthly": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 30, 23, 26, 24, 36, 27, 31]}, {"site": "SIN", "issue": "Serial number not captured at receiving", "key": "serial_not_captured", "units": 116, "value": 277466.81, "since": "2026-05-08", "owner": "Straits Supply Co.", "action": "Make serial number a mandatory scan field in WMS receiving; capture serials for the affected units and close their RMAs.", "monthly": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 28, 14, 24, 22, 28]}, {"site": "SDF", "issue": "Duplicate receipts inflate ERP inventory", "key": "duplicate_receipts", "units": 97, "value": 226788.32, "since": "", "owner": "Bluegrass Fulfillment", "action": "Block a second receipt against an already-received RMA; reverse the duplicate ERP receipts to correct inventory.", "monthly": [2, 5, 6, 7, 3, 3, 6, 4, 3, 9, 8, 5, 2, 1, 4, 2, 3, 8, 5, 3, 8]}, {"site": "RNO", "issue": "Receipts never posted to the ERP", "key": "unposted_receipts", "units": 94, "value": 157233.56, "since": "2026-06-10", "owner": "Sierra 3PL", "action": "Replay the failed WMS-to-ERP messages for the outage window and add an interface alert for unacknowledged receipts.", "monthly": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 94, 0, 0, 0]}, {"site": "AMS \u2192 PEN", "issue": "Transfer shipped, never received", "key": "lost_in_transit", "units": 66, "value": 145236.24, "since": "2026-04-28", "owner": "Polder Logistics", "action": "File a carrier claim and require depot receipt confirmation within 14 days of ship.", "monthly": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 66, 0, 0, 0, 0, 0]}, {"site": "AMS", "issue": "Units missing from the warehouse", "key": "missing_from_warehouse", "units": 19, "value": 48091.21, "since": "2026-07-06", "owner": "Polder Logistics", "action": "Run a full count of defective stock, investigate the posting window, then adjust the ERP once the root cause is confirmed.", "monthly": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 9, 10, 0]}], "hubs": [{"site": "AMS", "name": "Amsterdam Returns Hub", "operator": "Polder Logistics", "rmas": 2953, "bill_pending": 97, "erp": 45, "tpl": 26, "variance": 19, "variance_value": 48091.21}, {"site": "MEM", "name": "Memphis Returns Hub", "operator": "Riverline Logistics", "rmas": 4764, "bill_pending": 285, "erp": 58, "tpl": 58, "variance": 0, "variance_value": 0.0}, {"site": "RNO", "name": "Reno Returns Hub", "operator": "Sierra 3PL", "rmas": 3357, "bill_pending": 212, "erp": 37, "tpl": 131, "variance": -94, "variance_value": -157233.56}, {"site": "SDF", "name": "Louisville Returns Hub", "operator": "Bluegrass Fulfillment", "rmas": 3209, "bill_pending": 92, "erp": 127, "tpl": 30, "variance": 97, "variance_value": 226788.32}, {"site": "SIN", "name": "Singapore Returns Hub", "operator": "Straits Supply Co.", "rmas": 1876, "bill_pending": 131, "erp": 15, "tpl": 15, "variance": 0, "variance_value": 0.0}]};
+
+const money = v => v >= 1e6 ? `$${(v / 1e6).toFixed(2)}M` : v >= 1e3 ? `$${Math.round(v / 1e3)}K` : `$${Math.round(v)}`;
+const moneyFull = v => `${v < 0 ? "−" : ""}$${Math.abs(Math.round(v)).toLocaleString("en-US")}`;
+const num = v => v.toLocaleString("en-US");
+const monthLabel = m => new Date(`${m}-01T00:00:00`).toLocaleString("en-US", { month: "short", year: "numeric" });
+const SVG = "http://www.w3.org/2000/svg";
+
+function el(tag, attrs = {}, text) {
+  const node = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs)) node.setAttribute(k, v);
+  if (text !== undefined) node.textContent = text;
+  return node;
+}
+function svgEl(tag, attrs = {}, text) {
+  const node = document.createElementNS(SVG, tag);
+  for (const [k, v] of Object.entries(attrs)) node.setAttribute(k, v);
+  if (text !== undefined) node.textContent = text;
+  return node;
+}
+
+// One tooltip for every mark; value leads, label follows
+const tip = document.getElementById("tooltip");
+function attachTip(node, value, label) {
+  const show = e => {
+    tip.replaceChildren(el("strong", {}, value), el("span", {}, label));
+    const r = node.getBoundingClientRect();
+    const x = e && e.clientX !== undefined ? e.clientX : r.left + r.width / 2;
+    const y = e && e.clientY !== undefined ? e.clientY : r.top;
+    const w = tip.offsetWidth || 200;
+    tip.style.left = `${Math.min(Math.max(8, x - w / 2), window.innerWidth - w - 8)}px`;
+    tip.style.top = `${Math.max(8, y - tip.offsetHeight - 12)}px`;
+    tip.classList.add("show");
+  };
+  const hide = () => tip.classList.remove("show");
+  node.setAttribute("tabindex", "0");
+  node.setAttribute("aria-label", `${label}: ${value}`);
+  node.addEventListener("pointermove", show);
+  node.addEventListener("pointerenter", show);
+  node.addEventListener("pointerleave", hide);
+  node.addEventListener("focus", () => show());
+  node.addEventListener("blur", hide);
+}
+
+const t = DATA.totals;
+document.getElementById("subtitle").textContent =
+  `As of ${t.as_of} · ${num(t.rmas)} RMAs · ${num(t.transactions)} ERP transactions · 5 3PL hubs, 2 repair depots`;
+document.getElementById("hero").textContent = money(t.exposure);
+document.getElementById("hero-label").textContent = `3PL and process exposure across ${t.issues} issues`;
+
+const kpis = [
+  ["Customers flagged for billing in error", num(t.wrongly_billed), `${money(t.wrongly_billed_value)} of parts the 3PL received`],
+  ["Genuine non-returns to bill", num(t.non_returns), `${money(t.non_return_value)}, never arrived anywhere`],
+  ["Issues found", String(t.issues), "Across 5 hubs and 1 transfer lane"],
+];
+const kpiRoot = document.getElementById("kpis");
+for (const [label, value, note] of kpis) {
+  const d = el("div");
+  d.append(el("div", { class: "kpi-label" }, label), el("div", { class: "kpi-value" }, value), el("div", { class: "kpi-note" }, note));
+  kpiRoot.append(d);
+}
+
+// Exposure bars: one series, one color, value at the tip
+const failures = DATA.findings.filter(f => f.key !== "customer_non_return");
+const maxValue = Math.max(...failures.map(f => f.value));
+const bars = document.getElementById("bars");
+for (const f of failures) {
+  const row = el("div");
+  const label = el("div", { class: "bar-label" });
+  label.append(el("span", { class: "site" }, f.site), document.createTextNode(f.issue));
+  const track = el("div", { class: "bar-row baseline" });
+  const bar = el("div", { class: "bar" });
+  bar.style.width = `calc((100% - 72px) * ${(f.value / maxValue).toFixed(4)})`;
+  attachTip(bar, moneyFull(f.value), `${f.site} · ${num(f.units)} units`);
+  track.append(bar, el("span", { class: "bar-value" }, money(f.value)));
+  row.append(label, track);
+  bars.append(row);
+}
+
+// Small multiples: monthly affected units per finding
+const months = DATA.months;
+const multiples = document.getElementById("multiples");
+const W = 300, H = 120, padTop = 18, bottom = 20, gap = 2;
+for (const f of failures) {
+  const panel = el("div", { class: "panel" });
+  const title = el("p", { class: "panel-title" });
+  title.append(el("span", { class: "site" }, f.site), document.createTextNode(f.issue));
+  const svg = svgEl("svg", { viewBox: `0 0 ${W} ${H}`, role: "img", "aria-label": `${f.issue} by month` });
+  const peak = Math.max(...f.monthly, 1);
+  const slot = W / months.length;
+  const cw = Math.min(24, slot - gap);
+  const plotH = H - padTop - bottom;
+  svg.append(svgEl("line", { x1: 0, x2: W, y1: H - bottom, y2: H - bottom, stroke: "var(--axis)", "stroke-width": 1 }));
+  const peakIndex = f.monthly.indexOf(peak);
+  f.monthly.forEach((v, i) => {
+    const x = i * slot + (slot - cw) / 2;
+    const hit = svgEl("rect", { class: "hit", x: i * slot, y: padTop, width: slot, height: plotH });
+    const g = svgEl("g");
+    if (v > 0) {
+      const h = Math.max(2, (v / peak) * plotH);
+      const y = H - bottom - h;
+      const r = Math.min(4, cw / 2, h);
+      const d = `M${x},${H - bottom} V${y + r} Q${x},${y} ${x + r},${y} H${x + cw - r} Q${x + cw},${y} ${x + cw},${y + r} V${H - bottom} Z`;
+      g.append(svgEl("path", { class: "col", d }));
+    }
+    g.append(hit);
+    attachTip(g, `${num(v)} units`, monthLabel(months[i]));
+    svg.append(g);
+  });
+  const px = peakIndex * slot + slot / 2;
+  svg.append(svgEl("text", { class: "peak", x: Math.min(Math.max(px, 12), W - 12), y: padTop - 6, "text-anchor": "middle" }, num(peak)));
+  svg.append(svgEl("text", { x: 0, y: H - 4 }, monthLabel(months[0])));
+  svg.append(svgEl("text", { x: W, y: H - 4, "text-anchor": "end" }, monthLabel(months[months.length - 1])));
+  panel.append(title, svg);
+  multiples.append(panel);
+}
+
+// Status: icon + label, never color alone
+function status(ok, text) {
+  const s = el("span", { class: `status ${ok ? "good" : "critical"}` });
+  const icon = svgEl("svg", { width: 16, height: 16, viewBox: "0 0 16 16", "aria-hidden": "true" });
+  icon.append(ok
+    ? svgEl("path", { d: "M3 8.5l3.2 3L13 4.5", fill: "none", stroke: "currentColor", "stroke-width": 2, "stroke-linecap": "round", "stroke-linejoin": "round" })
+    : svgEl("path", { d: "M8 2.5L14.5 13.5H1.5Z M8 6.5V9.5 M8 11.3V11.4", fill: "none", stroke: "currentColor", "stroke-width": 1.8, "stroke-linejoin": "round", "stroke-linecap": "round" }));
+  s.append(icon, document.createTextNode(text));
+  return s;
+}
+
+function table(id, headers, rows) {
+  const tableEl = document.getElementById(id);
+  const head = el("tr");
+  for (const [text, cls] of headers) head.append(el("th", cls ? { class: cls } : {}, text));
+  const thead = el("thead"); thead.append(head);
+  const tbody = el("tbody");
+  for (const cells of rows) {
+    const tr = el("tr");
+    cells.forEach((c, i) => {
+      const td = el("td", headers[i][1] ? { class: headers[i][1] } : {});
+      if (c instanceof Node) td.append(c); else td.textContent = c;
+      tr.append(td);
+    });
+    tbody.append(tr);
+  }
+  tableEl.replaceChildren(thead, tbody);
+}
+
+table("hubs",
+  [["Hub"], ["3PL operator"], ["RMAs", "num"], ["Bill pending", "num"], ["ERP units", "num"], ["3PL units", "num"], ["Variance", "num"], ["Variance value", "num"], ["Status"]],
+  DATA.hubs.map(h => [
+    `${h.site} · ${h.name}`, h.operator, num(h.rmas), num(h.bill_pending), num(h.erp), num(h.tpl),
+    (h.variance > 0 ? "+" : h.variance < 0 ? "−" : "") + num(Math.abs(h.variance)), moneyFull(h.variance_value),
+    status(h.variance === 0, h.variance === 0 ? "Reconciled" : h.variance > 0 ? "ERP overstated" : "ERP understated"),
+  ]));
+
+table("actions",
+  [["Site"], ["Issue"], ["Units", "num"], ["Exposure", "num"], ["Since", "nowrap"], ["Owner"], ["Corrective action", "action"]],
+  DATA.findings.map(f => [f.site, f.issue, num(f.units), moneyFull(f.value), f.since || "—", f.owner, f.action]));
+</script>
+</body>
+</html>
