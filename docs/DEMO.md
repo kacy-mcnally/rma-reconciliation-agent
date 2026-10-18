@@ -14,7 +14,7 @@ Point at the three numbers in the top card.
 
 ## 0:50 to 1:30: Two findings (scroll to "When each problem started")
 
-> "Memphis: wrong part numbers keyed at receiving since March. Every one is an adjacent part number, 413 instead of 412, which tells you it's a keying problem, not a parts problem. The fix is scan-to-match at the dock, not retraining the customer."
+> "Memphis: wrong part numbers keyed at receiving since March. Every one is an adjacent part number, 413 instead of 412, which tells you it's a keying problem, not a parts problem. The fix is scan-to-match at the dock."
 
 > "Reno: one sharp spike, June 10 to 24. That's an interface outage. The 3PL received 94 units but the ERP never heard about them, so those RMAs aged into customer billing."
 
