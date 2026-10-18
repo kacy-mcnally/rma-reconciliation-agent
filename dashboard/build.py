@@ -16,6 +16,7 @@ from rma_agent import investigate as iv
 from rma_agent.scan import scan
 
 OUT = Path(__file__).resolve().parent / "index.html"
+PAGES_OUT = Path(__file__).resolve().parent.parent / "docs" / "index.html"  # GitHub Pages copy
 
 ISSUE_LABELS = {
     "wrong_part_number": "Wrong part number keyed at receiving",
@@ -111,8 +112,10 @@ def build_data():
 def main():
     data = build_data()
     template = (Path(__file__).resolve().parent / "template.html").read_text()
-    OUT.write_text(template.replace("/*__DATA__*/null", json.dumps(data)))
-    print(f"Wrote {OUT}")
+    html = template.replace("/*__DATA__*/null", json.dumps(data))
+    for path in (OUT, PAGES_OUT):
+        path.write_text(html)
+        print(f"Wrote {path}")
 
 
 if __name__ == "__main__":
