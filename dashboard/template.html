@@ -30,6 +30,13 @@
   --good: #0ca30c;
   --good-text: #006300;
   --critical: #d03b3b;
+  --neutral: #898781;
+  --s1: #2a78d6;
+  --s2: #eb6834;
+  --s3: #1baf7a;
+  --s4: #eda100;
+  --s5: #e87ba4;
+  --s6: #008300;
 }
 @media (prefers-color-scheme: dark) {
   :root:where(:not([data-theme="light"])) {
@@ -46,6 +53,12 @@
     --series-1-hover: #5598e7;
     --track: #262624;
     --good-text: #0ca30c;
+    --s1: #3987e5;
+    --s2: #d95926;
+    --s3: #199e70;
+    --s4: #c98500;
+    --s5: #d55181;
+    --s6: #008300;
   }
 }
 :root[data-theme="dark"] {
@@ -62,6 +75,12 @@
   --series-1-hover: #5598e7;
   --track: #262624;
   --good-text: #0ca30c;
+  --s1: #3987e5;
+  --s2: #d95926;
+  --s3: #199e70;
+  --s4: #c98500;
+  --s5: #d55181;
+  --s6: #008300;
 }
 * { box-sizing: border-box; }
 body {
@@ -97,11 +116,11 @@ h2 { font-size: 17px; margin: 0 0 4px; font-weight: 600; }
 .bar-row { display: flex; align-items: center; gap: 8px; margin-top: 4px; }
 .bar {
   height: 20px; min-width: 3px;
-  background: var(--series-1);
+  background: var(--issue);
   border-radius: 0 4px 4px 0;
   cursor: default; outline-offset: 2px;
 }
-.bar:hover, .bar:focus-visible { background: var(--series-1-hover); }
+.bar:hover, .bar:focus-visible { filter: brightness(0.88); }
 .bar-value { font-size: 14px; color: var(--text-primary); white-space: nowrap; font-variant-numeric: tabular-nums; }
 .baseline { border-left: 1px solid var(--axis); padding-left: 0; }
 
@@ -112,8 +131,9 @@ h2 { font-size: 17px; margin: 0 0 4px; font-weight: 600; }
 .panel svg { width: 100%; height: auto; display: block; overflow: visible; }
 .panel svg text { fill: var(--text-muted); font-size: 11px; font-family: inherit; }
 .panel svg .peak { fill: var(--text-secondary); }
-.col { fill: var(--series-1); }
-.col:hover, .col:focus-visible { fill: var(--series-1-hover); outline: none; }
+.col { fill: var(--issue); }
+g:hover > .col, g:focus-visible > .col { filter: brightness(0.88); }
+g:focus-visible { outline: none; }
 .hit { fill: transparent; }
 
 /* Tables */
@@ -126,6 +146,8 @@ td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; white-sp
 .status svg { flex: none; }
 .status.good { color: var(--good-text); }
 .status.critical { color: var(--critical); }
+.swatch { display: inline-block; width: 10px; height: 10px; border-radius: 3px; background: var(--issue); margin-right: 8px; vertical-align: baseline; }
+.panel-title .swatch, .bar-label .swatch { margin-right: 6px; }
 .action { color: var(--text-secondary); min-width: 260px; }
 .nowrap { white-space: nowrap; }
 
@@ -201,6 +223,16 @@ const moneyFull = v => `${v < 0 ? "−" : ""}$${Math.abs(Math.round(v)).toLocale
 const num = v => v.toLocaleString("en-US");
 const monthLabel = m => new Date(`${m}-01T00:00:00`).toLocaleString("en-US", { month: "short", year: "numeric" });
 const SVG = "http://www.w3.org/2000/svg";
+const ISSUE_COLOR = {
+  wrong_part_number: "var(--s1)", serial_not_captured: "var(--s2)", duplicate_receipts: "var(--s3)",
+  unposted_receipts: "var(--s4)", lost_in_transit: "var(--s5)", missing_from_warehouse: "var(--s6)",
+  customer_non_return: "var(--neutral)",
+};
+function swatch(key) {
+  const s = el("span", { class: "swatch", "aria-hidden": "true" });
+  s.style.setProperty("--issue", ISSUE_COLOR[key]);
+  return s;
+}
 
 function el(tag, attrs = {}, text) {
   const node = document.createElement(tag);
@@ -263,9 +295,10 @@ const bars = document.getElementById("bars");
 for (const f of failures) {
   const row = el("div");
   const label = el("div", { class: "bar-label" });
-  label.append(el("span", { class: "site" }, f.site), document.createTextNode(f.issue));
+  label.append(swatch(f.key), el("span", { class: "site" }, f.site), document.createTextNode(f.issue));
   const track = el("div", { class: "bar-row baseline" });
   const bar = el("div", { class: "bar" });
+  bar.style.setProperty("--issue", ISSUE_COLOR[f.key]);
   bar.style.width = `calc((100% - 72px) * ${(f.value / maxValue).toFixed(4)})`;
   attachTip(bar, moneyFull(f.value), `${f.site} · ${num(f.units)} units`);
   track.append(bar, el("span", { class: "bar-value" }, money(f.value)));
@@ -280,8 +313,9 @@ const W = 300, H = 120, padTop = 18, bottom = 20, gap = 2;
 for (const f of failures) {
   const panel = el("div", { class: "panel" });
   const title = el("p", { class: "panel-title" });
-  title.append(el("span", { class: "site" }, f.site), document.createTextNode(f.issue));
+  title.append(swatch(f.key), el("span", { class: "site" }, f.site), document.createTextNode(f.issue));
   const svg = svgEl("svg", { viewBox: `0 0 ${W} ${H}`, role: "img", "aria-label": `${f.issue} by month` });
+  svg.style.setProperty("--issue", ISSUE_COLOR[f.key]);
   const peak = Math.max(...f.monthly, 1);
   const slot = W / months.length;
   const cw = Math.min(24, slot - gap);
@@ -350,7 +384,7 @@ table("hubs",
 
 table("actions",
   [["Site"], ["Issue"], ["Units", "num"], ["Exposure", "num"], ["Since", "nowrap"], ["Owner"], ["Corrective action", "action"]],
-  DATA.findings.map(f => [f.site, f.issue, num(f.units), moneyFull(f.value), f.since || "—", f.owner, f.action]));
+  DATA.findings.map(f => [f.site, (() => { const c = el("span"); c.append(swatch(f.key), document.createTextNode(f.issue)); return c; })(), num(f.units), moneyFull(f.value), f.since || "—", f.owner, f.action]));
 </script>
 </body>
 </html>
